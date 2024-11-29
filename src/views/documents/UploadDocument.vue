@@ -23,7 +23,7 @@ function handleFileSelect(event: Event) {
     const selectedFile = input.files[0]
     
     if (!allowedTypes.includes(selectedFile.type)) {
-      toast.error('Invalid file type. Please upload PDF, PNG, or JPG files only.')
+      toast.error('Type de fichier invalide. Veuillez télécharger des fichiers PDF, PNG ou JPG uniquement.')
       return
     }
 
@@ -41,7 +41,7 @@ function handleFileSelect(event: Event) {
 
 async function handleUpload() {
   if (!file.value || !categoryId.value) {
-    toast.error('Please select a file and category')
+    toast.error('Veuillez sélectionner un fichier et une catégorie')
     return
   }
 
@@ -51,11 +51,12 @@ async function handleUpload() {
   formData.append('categoryId', categoryId.value.toString())
 
   try {
-    await documentStore.uploadDocument(formData)
-    toast.success('Document uploaded successfully')
+    const uploadedDocument = await documentStore.uploadDocument(formData)
+    toast.success(`Document "${uploadedDocument.name}" téléchargé avec succès`)
     router.push('/dashboard/documents')
   } catch (error) {
-    toast.error('Failed to upload document')
+    console.error('Erreur de téléchargement :', error)
+    toast.error(error instanceof Error ? error.message : 'Échec du téléchargement du document')
   } finally {
     loading.value = false
   }
@@ -64,19 +65,19 @@ async function handleUpload() {
 
 <template>
   <div class="upload-document">
-    <h2 class="mb-4">Upload Document</h2>
+    <h2 class="mb-4">Télécharger un document</h2>
     
     <div class="card">
       <div class="card-body">
         <form @submit.prevent="handleUpload">
           <div class="mb-3">
-            <label class="form-label">Category</label>
+            <label class="form-label">Catégorie</label>
             <select 
               v-model="categoryId"
               class="form-select"
               required
             >
-              <option value="" disabled selected>Select a category</option>
+              <option value="" disabled selected>Sélectionnez une catégorie</option>
               <option 
                 v-for="category in categoryStore.categories"
                 :key="category.id"
@@ -97,12 +98,12 @@ async function handleUpload() {
               required
             />
             <small class="text-muted">
-              Supported formats: PDF, PNG, JPG
+              Formats pris en charge : PDF, PNG, JPG
             </small>
           </div>
 
           <div v-if="preview" class="mb-3">
-            <h6>Preview:</h6>
+            <h6>Aperçu :</h6>
             <img :src="preview" class="img-thumbnail" style="max-height: 200px" />
           </div>
 
@@ -111,7 +112,7 @@ async function handleUpload() {
             class="btn btn-primary"
             :disabled="loading || !file || !categoryId"
           >
-            {{ loading ? 'Uploading...' : 'Upload Document' }}
+            {{ loading ? 'Téléchargement en cours...' : 'Télécharger le document' }}
           </button>
         </form>
       </div>

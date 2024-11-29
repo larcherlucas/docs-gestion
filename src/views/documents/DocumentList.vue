@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDocumentStore } from '../../stores/documents'
 import { useCategoryStore } from '../../stores/categories'
 import { 
   BCard, 
@@ -16,26 +17,8 @@ import "bootstrap-vue-next/dist/bootstrap-vue-next.css"
 import "animate.css"
 
 const router = useRouter()
+const documentStore = useDocumentStore()
 const categoryStore = useCategoryStore()
-
-const documents = ref([
-  {
-    id: 1,
-    name: 'Rapport Q1 2024',
-    category: 'Finance',
-    modifiedAt: new Date('2024-02-15T14:30:00'),
-    status: 'Récent',
-    size: 1024 * 256 // 256 KB
-  },
-  {
-    id: 2, 
-    name: 'Présentation Marketing',
-    category: 'Marketing',
-    modifiedAt: new Date('2024-02-10T10:15:00'),
-    status: 'En cours',
-    size: 1024 * 512 // 512 KB
-  }
-])
 
 const showDeleteModal = ref(false)
 const selectedDocument = ref<number | null>(null)
@@ -78,17 +61,10 @@ function confirmDelete(documentId: number) {
 function handleDelete() {
   if (!selectedDocument.value) return
 
-  // Simulation de suppression
-  documents.value = documents.value.filter(doc => doc.id !== selectedDocument.value)
+  documentStore.deleteDocument(selectedDocument.value)
   showDeleteModal.value = false
   selectedDocument.value = null
 }
-
-const sortedDocuments = computed(() => 
-  [...documents.value].sort((a, b) => 
-    b.modifiedAt.getTime() - a.modifiedAt.getTime()
-  )
-)
 </script>
 
 <template>
@@ -119,7 +95,7 @@ const sortedDocuments = computed(() =>
       class="shadow-sm border-0 animate__animated animate__fadeInUp"
     >
       <BTable 
-        :items="sortedDocuments"
+        :items="documentStore.sortedDocuments"
         :fields="[
           { key: 'name', label: 'Nom' },
           { key: 'category', label: 'Catégorie' },
@@ -188,22 +164,3 @@ const sortedDocuments = computed(() =>
     </BModal>
   </div>
 </template>
-
-<style scoped>
-.card {
-  transition: transform 0.3s ease;
-}
-
-.card:hover {
-  transform: scale(1.02);
-}
-
-.btn-primary {
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-</style>

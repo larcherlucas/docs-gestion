@@ -2,7 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { useCategoryStore } from '../../stores/categories'
 import { useToast } from 'vue-toastification'
-import { BCard, BTable, BButton, BModal, BForm, BFormInput } from 'bootstrap-vue-next'
+import { BCard, BTable, BButton, BForm, BFormInput } from 'bootstrap-vue-next'
+import { BModal } from 'bootstrap-vue-next'
 import "bootstrap/dist/css/bootstrap.css"
 import "bootstrap-vue-next/dist/bootstrap-vue-next.css"
 import "animate.css"
