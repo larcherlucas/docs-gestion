@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDocumentStore } from '../../stores/documents'
 import { useToast } from 'vue-toastification'
 import { fabric } from 'fabric'
-import { PDFDocument } from 'pdf-lib'
 import VuePdfEmbed from 'vue-pdf-embed'
 
 const route = useRoute()
@@ -38,11 +37,21 @@ onMounted(async () => {
 
     // Load document
     const document = documentStore.documents.find(doc => doc.id === documentId)
-    if (document) {
-      pdfUrl.value = document.fileUrl
+    if (document && document.fileBase64) {
+      const base64Data = document.fileBase64.split(',')[1]
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: document.fileType })
+      pdfUrl.value = URL.createObjectURL(blob)
+    } else {
+      throw new Error('Document not found or fileBase64 is undefined')
     }
   } catch (error) {
-    toast.error('Failed to load document')
+    toast.error('Failed to load document: ' + error.message)
   } finally {
     loading.value = false
   }
@@ -53,7 +62,7 @@ function setActiveTool(toolName: keyof typeof tools.value) {
   Object.keys(tools.value).forEach(key => {
     tools.value[key as keyof typeof tools.value] = false
   })
-  
+
   // Enable selected tool
   tools.value[toolName] = true
 
@@ -116,17 +125,17 @@ async function saveChanges() {
   try {
     // Convert canvas to image
     const modifiedImage = canvas.value.toDataURL()
-    
+
     // In a real implementation, you would:
     // 1. Send the modified image to the backend
     // 2. Have the backend merge it with the original PDF
     // 3. Save the result
-    
+
     await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
     toast.success('Changes saved successfully')
     router.push('/dashboard/documents')
   } catch (error) {
-    toast.error('Failed to save changes')
+    toast.error('Failed to save changes: ' + error.message)
   } finally {
     saving.value = false
   }
@@ -177,6 +186,7 @@ function clearCanvas() {
                   :source="pdfUrl"
                   :page="currentPage"
                   @loaded="totalPages = $event"
+                  @error="toast.error('Failed to load PDF')"
                 />
                 <canvas id="editor-canvas"></canvas>
               </div>
@@ -262,7 +272,7 @@ function clearCanvas() {
     width: 100%;
     min-height: 800px;
     background: #f8f9fa;
-    
+
     canvas {
       position: absolute;
       top: 0;
